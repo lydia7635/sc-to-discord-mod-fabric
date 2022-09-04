@@ -5,28 +5,30 @@ import net.lydia7635.screenshottodiscord.config.DiscordBotInfo;
 import net.minecraft.client.MinecraftClient;
 
 import java.io.*;
-import java.net.*;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DiscordUploader {
     private static ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 
-    private static String createMessage(File screenshotDir, String filename, String username) {
-        String message = "{" +
-                "\"content\":\"" + username + " test by Lyu7 >>\"," +
+    private static String createMessage(File screenshotFile, String username) {
+        return "{" +
+                "\"content\":\"" + username + " >>\"," +
                 "\"type\":0," +
-                "\"sticker_ids\":[]}";
-                /*"\"attachments\":[{" +
-                    "\"id\":\"0\",\"filename\":\"" + filename + "\"" +
-                "}]}";*/
-        return message;
+                "\"sticker_ids\":[]," +
+                "\"attachments\":[{" +
+                    "\"id\":\"0\"," +
+                "   \"filename\":\"" + screenshotFile.getName() + "\"" +
+                "}]}";
     }
-    public static void uploadImage(File screenshotDir, String filename) {
+    public static void uploadImage(File screenshotFile) {
         String username = MinecraftClient.getInstance().getSession().getUsername();
         ScreenshotToDiscord.LOGGER.info("Player " + username + " is sending screenshot to Discord server...");
-        String message = createMessage(screenshotDir, filename, username);
+        String message = createMessage(screenshotFile, username);
 
         cachedThreadPool.execute(() -> {
             Thread.currentThread().setName("Image Uploading to Discord");
@@ -35,46 +37,26 @@ public class DiscordUploader {
             } catch(InterruptedException e) {
                 ScreenshotToDiscord.LOGGER.info("Thread interrupted");
             } finally {
-                sendMessage(DiscordBotInfo.botToken, DiscordBotInfo.channelId, message);
+                sendMessage(DiscordBotInfo.botToken, DiscordBotInfo.channelId, screenshotFile, message);
             }
         });
     }
 
-    public static void sendMessage(String botToken, String channelId, String message) {
+    public static void sendMessage(String botToken, String channelId, File screenshotFile, String message) {
         ScreenshotToDiscord.LOGGER.info("thread");
         try {
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bot " + botToken);
 
-            URL url = new URL("https://discord.com/api/v9/channels/" + channelId + "/messages");
-            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Authorization", "Bot " + botToken);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
+            MultipartUtility multipart = new MultipartUtility("https://discord.com/api/v9/channels/" + channelId + "/messages", "utf-8", headers);
 
-            OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
-            wr.write(message);
-            ScreenshotToDiscord.LOGGER.info(message);
-            wr.flush();
+            multipart.addFormField("payload_json", message);
+            multipart.addFilePart("files[0]", screenshotFile);
 
-            StringBuilder sb = new StringBuilder();
-            int HttpResult = conn.getResponseCode();
-            if (HttpResult == HttpURLConnection.HTTP_OK) {
-                BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream(), "utf-8"));
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    sb.append(line + "\n");
-                }
-                br.close();
-                ScreenshotToDiscord.LOGGER.info("" + sb.toString());
-            } else {
-                ScreenshotToDiscord.LOGGER.info(conn.getResponseCode() + conn.getResponseMessage());
+            List<String> response = multipart.finish();
+            for (String line : response) {
+                ScreenshotToDiscord.LOGGER.info("response: " + line);
             }
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -21,8 +21,8 @@ public class ScreenshotToDiscordMixin {
 			method = "saveScreenshotInner(Ljava/io/File;Ljava/lang/String;Lnet/minecraft/client/gl/Framebuffer;Ljava/util/function/Consumer;)V",
 			locals = LocalCapture.CAPTURE_FAILEXCEPTION)
 	private static void saveScreenshotMixin(File gameDirectory, String fileName, Framebuffer framebuffer, Consumer<Text> messageReceiver, CallbackInfo ci, NativeImage nativeImage, File file, File file2) {
-		File screenshotDir = new File(gameDirectory, "screenshots");
+		//File screenshotDir = new File(gameDirectory, "screenshots");
 		ScreenshotToDiscord.LOGGER.info("screenshot name: " + file2.getName());
-		DiscordUploader.uploadImage(screenshotDir, file2.getName());
+		DiscordUploader.uploadImage(file2);
 	}
 }
