@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+
+/* Reference:
+** - https://www.cpming.top/p/httpurlconnection-multipart-form-data
+** - https://stackoverflow.com/questions/34276466/simple-httpurlconnection-post-file-multipart-form-data-from-android-to-google-bl
+* */
 public class MultipartUtility {
     private final String boundary;
     private static final String LINE_FEED = "\r\n";
