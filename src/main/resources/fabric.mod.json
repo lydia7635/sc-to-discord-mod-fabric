@@ -18,7 +18,7 @@
 
   "environment": "client",
   "entrypoints": {
-    "main": [
+    "client": [
       "net.lydia7635.screenshottodiscord.ScreenshotToDiscord"
     ]
   },
